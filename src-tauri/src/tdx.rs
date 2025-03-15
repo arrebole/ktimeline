@@ -42,3 +42,13 @@ pub fn read_lday(code: &str) -> String {
     }
     return result;
 }
+
+// 读取笔记列表
+pub fn read_note_list() -> String {
+    return format!("hello");
+}
+
+// 读取指定日期的笔记内容
+pub fn read_note_content(date: &str) -> String {
+    return format!("hello");
+}

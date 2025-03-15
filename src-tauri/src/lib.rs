@@ -8,8 +8,8 @@ fn find_klines(code: &str) -> String {
 
 // 获取笔记的列表
 #[tauri::command]
-fn find_note_list(code: &str) -> String {
-    "hello".to_string()
+fn find_note_list() -> String {
+    return tdx::read_note_list();
 }
 
 // 获取笔记的数据

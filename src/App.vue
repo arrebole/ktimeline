@@ -5,23 +5,23 @@
 </template>
 
 <script setup lang="ts">
+import './indicator';
 import { ref, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { init, dispose } from 'klinecharts';
 
-function convertToTimestamp(dateStr) {
+function convertToTimestamp(dateStr: string) {
   const year = dateStr.slice(0, 4);
   const month = dateStr.slice(4, 6);
   const day = dateStr.slice(6, 8);
   // 使用 UTC 时间
-  const date = new Date(Date.UTC(year, month - 1, day));
+  const date = new Date(+year, +month - 1, +day);
   // 获取时间戳
-  const timestamp = date.getTime();
-  return timestamp;
+  return date.getTime();
 }
 
 async function fetchKlineData() {
-  const content = await invoke("find_klines", { 
+  const content: String = await invoke("find_klines", { 
     code: "sh999999" 
   });
 
@@ -41,16 +41,64 @@ async function fetchKlineData() {
     });
 }
 
+function createChart(ds: HTMLElement | string) {
+  const chart = init(ds, {
+    styles: {
+      grid: {
+        show: false
+      },
+      candle: {
+        bar: {
+          upColor: '#F92855',
+          upBorderColor: '#F92855',
+          upWickColor: '#F92855',
+          downColor: '#2DC08E',
+          downBorderColor: '#2DC08E',
+          downWickColor: '#2DC08E',
+          noChangeColor: '#888888',
+          noChangeBorderColor: '#888888',
+          noChangeWickColor: '#888888'
+        },
+        tooltip: {
+          custom: [
+            { title: '时：', value: '{time}' },
+            { title: '开：', value: '{open}' },
+            { title: '高：', value: '{high}' },
+            { title: '低：', value: '{low}' },
+            { title: '收：', value: '{close}' },
+            { title: '量：', value: '{volume}' }
+          ]
+        }
+      },
+    }
+  })!;
+  return chart;
+}
+
 onMounted(async () => {
-  const chart = init('chart');
-  chart.createIndicator("MA", false, {
+  const chart = createChart("chart");
+
+  // 获取K线数据创建K线图
+  const klinesData = await fetchKlineData();
+  chart.applyNewData(klinesData);
+
+  // 为K线图增加指标
+  chart.createIndicator("MYMA", false, {
     id: 'candle_pane'
   });
-  chart.createIndicator("VOL", false, {
-    height: 60,
+  chart.createIndicator("MYVOL", false, {
+    height: 50,
   });
-  const klineData = await fetchKlineData();
-  chart.applyNewData(klineData);
+
+  // 获取笔记列表 创建K线图中的提示标签
+  chart.createOverlay({
+      name: 'simpleAnnotation',
+      extendData: '白酒',
+      points: [{ 
+        timestamp: klinesData[klinesData.length-1].timestamp, 
+        value: klinesData[klinesData.length-1].high, 
+      }]
+  })
 })
 
 onUnmounted(() => {
@@ -102,7 +150,7 @@ html, body, #app {
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
-    background-color: #2f2f2f;
+    background-color: #161618;
   }
 }
 

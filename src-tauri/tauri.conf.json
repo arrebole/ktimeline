@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "ktimeline",
-        "width": 500,
-        "height": 300,
+        "width": 720,
+        "height": 350,
         "resizable": false
       }
     ],
