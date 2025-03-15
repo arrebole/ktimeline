@@ -14,8 +14,8 @@ fn find_note_list() -> String {
 
 // 获取笔记的数据
 #[tauri::command]
-fn find_note_content(code: &str) -> String {
-    "hello".to_string()
+fn find_note_content(date: &str) -> String {
+    return tdx::read_note_content(date);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
