@@ -6,10 +6,10 @@ fn find_klines(code: &str) -> String {
     return tdx::read_lday(code);
 }
 
-// 获取笔记的列表
+// 获取索引标记
 #[tauri::command]
-fn find_note_list() -> String {
-    return tdx::read_note_list();
+fn find_index() -> String {
+    return tdx::read_index();
 }
 
 // 获取笔记的数据
@@ -25,7 +25,7 @@ pub fn run() {
         .invoke_handler(
             tauri::generate_handler![
                 find_klines,
-                find_note_list,
+                find_index,
                 find_note_content
             ]
         )

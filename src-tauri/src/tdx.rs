@@ -1,4 +1,7 @@
 use std::fs;
+use std::fs::File;
+use std::io::Read;
+use serde::Deserialize;
 
 fn parse_buffer(buf: &[u8]) -> String {
     let date = u32::from_le_bytes(buf[0..4].try_into().unwrap());
@@ -9,7 +12,7 @@ fn parse_buffer(buf: &[u8]) -> String {
     let amount = u32::from_le_bytes(buf[20..24].try_into().unwrap());
     let volume = u32::from_le_bytes(buf[24..28].try_into().unwrap());
     return format!(
-        "{}, {}, {}, {}, {}, {}, {}",
+        "{} {} {} {} {} {} {}\n",
         date, open, high, low, close, amount, volume
     );
 }
@@ -19,7 +22,7 @@ pub fn read_lday(code: &str) -> String {
     let market = &code[0..=1];
 
     let file_path = format!(
-        "E:/tdx/vipdoc/{market}/lday/{code}.day"
+        "../../vipdoc/{market}/lday/{code}.day"
     );
 
     let buf = fs::read(file_path)
@@ -36,19 +39,58 @@ pub fn read_lday(code: &str) -> String {
     let mut result = String::new();
     for _ in 0..no {
         let line = parse_buffer(&buf[b..e]);
-        result = result + &line + "\n";
+        result = result + &line;
         b += 32;
         e += 32;
     }
     return result;
 }
 
-// 读取笔记列表
-pub fn read_note_list() -> String {
-    return format!("hello");
+#[derive(Debug, Deserialize)]
+struct IndexItem {
+    date: String,
+    up: String,
+    down: String
+}
+
+// 读取索引，获取日期事件标记
+pub fn read_index() -> String {
+    // 读取 .yaml 文件
+    let file = File::open(
+        "../note/默认分区/_index.yaml"
+    );
+    if file.is_err() {
+        return String::new();
+    }
+    
+    let mut contents = String::new();
+    let result = file.unwrap().read_to_string(&mut contents);
+    if result.is_err() {
+        return String::new();
+    }
+
+    let mut result = String::new();
+    let items: Vec<IndexItem> = serde_yaml::from_str(&contents).unwrap();
+    for v in items {
+        result += &format!("{} {} {}\n", v.date, v.up, v.down);
+    }
+    return result;
 }
 
 // 读取指定日期的笔记内容
 pub fn read_note_content(date: &str) -> String {
-    return format!("hello");
+    let file = File::open(
+        format!("../note/默认分区/{}.cic", date)
+    );
+    if file.is_err() {
+        return String::new();
+    }
+
+    let mut contents = String::new();
+    let result = file.unwrap().read_to_string(&mut contents);
+    if result.is_err() {
+        return String::new();
+    }
+
+    return contents;
 }

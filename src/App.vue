@@ -1,5 +1,6 @@
 <template>
   <main class="main">
+    <div id="slide" ref="noteContent"></div>
     <div id="chart"/>
   </main>
 </template>
@@ -7,39 +8,10 @@
 <script setup lang="ts">
 import './indicator';
 import { ref, onMounted, onUnmounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { init, dispose } from 'klinecharts';
+import { init, dispose, ActionType } from 'klinecharts';
+import { fetchKlineData, fetchIndex, fetchNoteContent } from './api';
 
-function convertToTimestamp(dateStr: string) {
-  const year = dateStr.slice(0, 4);
-  const month = dateStr.slice(4, 6);
-  const day = dateStr.slice(6, 8);
-  // 使用 UTC 时间
-  const date = new Date(+year, +month - 1, +day);
-  // 获取时间戳
-  return date.getTime();
-}
-
-async function fetchKlineData() {
-  const content: String = await invoke("find_klines", { 
-    code: "sh999999" 
-  });
-
-  return content
-    .split("\n")
-    .filter(l => l.length > 0)
-    .map(v => v.split(","))
-    .map((rows)=>{
-        return {
-          timestamp: convertToTimestamp(rows[0]),
-          open: +rows[1]/100,
-          high: +rows[2]/100,
-          low: +rows[3]/100,
-          close: +rows[4]/100,
-          volume: +rows[6],
-        }
-    });
-}
+const noteContent = ref<HTMLElement>();
 
 function createChart(ds: HTMLElement | string) {
   const chart = init(ds, {
@@ -91,14 +63,46 @@ onMounted(async () => {
   });
 
   // 获取笔记列表 创建K线图中的提示标签
-  chart.createOverlay({
+  const indexItems = await fetchIndex();
+  for (const item of indexItems) {
+    const kline = klinesData.find(
+      (k) => k.timestamp == item.timestamp
+    );
+    if (!kline) {
+      continue;
+    }
+    chart.createOverlay({
       name: 'simpleAnnotation',
-      extendData: '白酒',
+      extendData: item.up + "↑",
+      styles: {
+        text: { size: 9 }
+      },
       points: [{ 
-        timestamp: klinesData[klinesData.length-1].timestamp, 
-        value: klinesData[klinesData.length-1].high, 
+        timestamp: kline.timestamp, 
+        value: Math.max(kline.open, kline.close), 
       }]
-  })
+    });
+  }
+
+  // 监控 十字准线改变时
+  chart.subscribeAction(ActionType.OnCrosshairChange, async (data: any) => {
+    const date = new Date(data.timestamp)
+      .toISOString()
+      .substring(0, 10)
+      .replace(/-/g, "");
+
+    const elements = await fetchNoteContent(date);
+    if (!Array.isArray(elements)) {
+      return
+    }
+
+    const container = document.createElement('div');
+    for (const el of elements) {
+      container.appendChild(el);
+    }
+    // 将新元素插入到容器中
+    noteContent.value!.replaceChildren(container);
+  });
 })
 
 onUnmounted(() => {
@@ -112,7 +116,6 @@ onUnmounted(() => {
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-
   color: #0f0f0f;
   background-color: #f6f6f6;
 
@@ -132,19 +135,23 @@ html, body, #app {
 .main {
   display: flex;
   /* 垂直排列 */
-  flex-direction: column; 
-  /* 垂直居中 */
-  justify-content: center; 
-  /* 水平居中 */
-  align-items: center; 
+  flex-direction: row;
   height: 100vh;
   width: 100vw;
 }
 
+#slide {
+  padding: 8px;
+  margin: 8px;
+  border-right: 1px dotted #f6f6f6;
+  font-size: 10px;
+  width: 200px;
+}
+
 #chart {
+  padding: 8px;
+  margin-left: 5px;
   flex-grow: 1;
-  height: 100vh;
-  width: 100vw;
 }
 
 @media (prefers-color-scheme: dark) {
