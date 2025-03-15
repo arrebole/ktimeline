@@ -1,16 +1,16 @@
 use std::fs;
 
 fn parse_buffer(buf: &[u8]) -> String {
-    let field1 = u32::from_le_bytes(buf[0..4].try_into().unwrap());
-    let field2 = u32::from_le_bytes(buf[4..8].try_into().unwrap());
-    let field3 = u32::from_le_bytes(buf[8..12].try_into().unwrap());
-    let field4 = u32::from_le_bytes(buf[12..16].try_into().unwrap());
-    let field5 = u32::from_le_bytes(buf[16..20].try_into().unwrap());
-    let field6 = u32::from_le_bytes(buf[20..24].try_into().unwrap());
-    let field7 = u32::from_le_bytes(buf[24..28].try_into().unwrap());
+    let date = u32::from_le_bytes(buf[0..4].try_into().unwrap());
+    let open = u32::from_le_bytes(buf[4..8].try_into().unwrap());
+    let high = u32::from_le_bytes(buf[8..12].try_into().unwrap());
+    let low = u32::from_le_bytes(buf[12..16].try_into().unwrap());
+    let close = u32::from_le_bytes(buf[16..20].try_into().unwrap());
+    let amount = u32::from_le_bytes(buf[20..24].try_into().unwrap());
+    let volume = u32::from_le_bytes(buf[24..28].try_into().unwrap());
     return format!(
         "{}, {}, {}, {}, {}, {}, {}",
-        field1, field2, field3, field4, field5, field6, field7
+        date, open, high, low, close, amount, volume
     );
 }
 
