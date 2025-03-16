@@ -71,9 +71,16 @@ onMounted(async () => {
     if (!kline) {
       continue;
     }
+    const extendData = [];
+    if (item.up) {
+      extendData.push(item.up + "↑");
+    }
+    if (item.down) {
+      extendData.push(item.down + "↓")
+    }
     chart.createOverlay({
       name: 'simpleAnnotation',
-      extendData: item.up + "↑",
+      extendData: extendData.join(""),
       styles: {
         text: { size: 9 }
       },
