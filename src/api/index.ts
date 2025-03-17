@@ -46,11 +46,6 @@ export async function fetchIndex() {
 }
 
 /**
- * 防止重复获取，将已请求过的结果缓存
- */
-const noteCache = new Map<string, HTMLElement[] | null>();
-
-/**
  * 将字符串转化为字节码
  */
 function stringToArrayBuffer(str: string) {
@@ -102,17 +97,12 @@ function changeBlackToWhite(elements: HTMLElement[]) {
  * 获取指定日期的笔记文件
  */
 export async function fetchNoteContent(date: string) {
-    if (noteCache.has(date)) {
-        return noteCache.get(date)!;
-    }
     const rtf: string = await invoke("find_note_content", {
         date
     });
-    if (rtf.length > 0) {
-        noteCache.set(date, changeBlackToWhite(await rtfparse(rtf)));
-    } else {
-        noteCache.set(date, []);
+    if (rtf && rtf.length > 0) {
+        return changeBlackToWhite(await rtfparse(rtf));
     }
-    return noteCache.get(date)!;
+    return [];
 }
 

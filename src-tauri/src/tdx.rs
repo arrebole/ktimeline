@@ -3,6 +3,8 @@ use std::fs::File;
 use std::io::Read;
 use serde::Deserialize;
 
+const ROOT_PATH: &str = "E:/tdx/T0002/note";
+
 fn parse_buffer(buf: &[u8]) -> String {
     let date = u32::from_le_bytes(buf[0..4].try_into().unwrap());
     let open = u32::from_le_bytes(buf[4..8].try_into().unwrap());
@@ -22,7 +24,7 @@ pub fn read_lday(code: &str) -> String {
     let market = &code[0..=1];
 
     let file_path = format!(
-        "../../vipdoc/{market}/lday/{code}.day"
+        "{ROOT_PATH}/../../vipdoc/{market}/lday/{code}.day"
     );
 
     let buf = fs::read(file_path)
@@ -56,7 +58,7 @@ struct IndexItem {
 pub fn read_index() -> String {
     // 读取 .yaml 文件
     let file = File::open(
-        "../note/默认分区/_index.yaml"
+        format!("{ROOT_PATH}/index.yaml")
     );
     if file.is_err() {
         return String::new();
@@ -79,7 +81,7 @@ pub fn read_index() -> String {
 // 读取指定日期的笔记内容
 pub fn read_note_content(date: &str) -> String {
     let file = File::open(
-        format!("../note/默认分区/{}.cic", date)
+        format!("{ROOT_PATH}/默认分区/{}.cic", date)
     );
     if file.is_err() {
         return String::new();

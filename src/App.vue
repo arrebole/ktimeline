@@ -11,6 +11,7 @@ import dayjs from 'dayjs'
 import { ref, onMounted, onUnmounted } from "vue";
 import { init, dispose, ActionType } from 'klinecharts';
 import { fetchKlineData, fetchIndex, fetchNoteContent } from './api';
+import { debounce } from './utils';
 
 const noteContent = ref<HTMLElement>();
 
@@ -45,6 +46,22 @@ function createChart(ds: HTMLElement | string) {
     }
   })!;
   return chart;
+}
+
+async function onCrosshairChange(data: any) {
+  const date = dayjs(data.timestamp).format('YYYYMMDD');
+
+  const elements = await fetchNoteContent(date);
+  if (!Array.isArray(elements)) {
+    return
+  }
+
+  const container = document.createElement('div');
+  for (const el of elements) {
+    container.appendChild(el);
+  }
+  // 将新元素插入到容器中
+  noteContent.value!.replaceChildren(container);
 }
 
 onMounted(async () => {
@@ -85,22 +102,11 @@ onMounted(async () => {
   }
 
   // 监控 十字准线改变时
-  chart.subscribeAction(ActionType.OnCrosshairChange, async (data: any) => {
-    const date = dayjs(data.timestamp).format('YYYYMMDD');
-
-    const elements = await fetchNoteContent(date);
-    if (!Array.isArray(elements)) {
-      return
-    }
-
-    const container = document.createElement('div');
-    for (const el of elements) {
-      container.appendChild(el);
-    }
-    // 将新元素插入到容器中
-    noteContent.value!.replaceChildren(container);
-  });
-})
+  chart.subscribeAction(
+    ActionType.OnCrosshairChange, 
+    debounce(onCrosshairChange, 300, false),
+  );
+});
 
 onUnmounted(() => {
   dispose('chart')
