@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use serde::Deserialize;
 
-const ROOT_PATH: &str = "E:/tdx/T0002/note";
+const ROOT_PATH: &str = ".";
 
 fn parse_buffer(buf: &[u8]) -> String {
     let date = u32::from_le_bytes(buf[0..4].try_into().unwrap());
