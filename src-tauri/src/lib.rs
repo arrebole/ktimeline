@@ -12,6 +12,12 @@ fn find_index() -> String {
     return tdx::read_index();
 }
 
+// 更新索引标记
+#[tauri::command]
+fn update_index(date: &str, symbol: &str) -> String {
+    return tdx::update_index(date, symbol);
+}
+
 // 获取笔记的数据
 #[tauri::command]
 fn find_note_content(date: &str) -> String {
@@ -26,6 +32,7 @@ pub fn run() {
             tauri::generate_handler![
                 find_klines,
                 find_index,
+                update_index,
                 find_note_content
             ]
         )

@@ -2,6 +2,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { RTFJS } from 'rtf.js';
 RTFJS.loggingEnabled(false);
 
+export interface IndexItem {
+    timestamp: number;
+    symbol: string;
+}
+
 function convertToTimestamp(dateStr: string) {
     const year = dateStr.slice(0, 4);
     const month = dateStr.slice(4, 6);
@@ -33,7 +38,7 @@ export async function fetchKlineData() {
         ));
 }
 
-export async function fetchIndex() {
+export async function fetchIndex(): Promise<IndexItem[]> {
     const content: string = await invoke("find_index");
     return content
         .split("\n")
@@ -43,6 +48,14 @@ export async function fetchIndex() {
             timestamp: convertToTimestamp(rows[0]),
             symbol: rows[1],
         }));
+}
+
+export async function updateIndex(date: string, symbol: string): Promise<string> {
+    console.log("update", date, symbol);
+    return await invoke("update_index", {
+        date,
+        symbol,
+    });
 }
 
 /**

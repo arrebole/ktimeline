@@ -1,109 +1,97 @@
 <template>
   <main class="main">
-    <div id="slide" ref="noteContent"></div>
+    <div id="slide">
+      <div class="slide-header">
+        <div class="current-date">{{ currentDate }}</div>
+        <input 
+          id="symbol-input" 
+          v-model="currentSymbol"
+          placeholder="..."
+          autocomplete="off"
+          @blur="handleUpdateSymbol"
+          @keyup.enter="handleEnter"
+        />
+      </div>
+      <div id="noteContent" ref="noteContent"></div>
+    </div>
     <div id="chart"/>
   </main>
 </template>
 
 <script setup lang="ts">
-import './extension';
-import dayjs from 'dayjs'
+import dayjs from 'dayjs';
+import { createChart, randerOverlays } from './klineChart';
 import { ref, onMounted, onUnmounted } from "vue";
-import { init, dispose, ActionType } from 'klinecharts';
-import { fetchKlineData, fetchIndex, fetchNoteContent } from './api';
+import { dispose, Chart, ActionType } from 'klinecharts';
 import { debounce } from './utils';
+import { fetchIndex, fetchKlineData, fetchNoteContent, IndexItem, updateIndex } from './api';
 
+const klineChart = ref<Chart>();
 const noteContent = ref<HTMLElement>();
+const indexData = ref<IndexItem[]>([]);
+const currentTimestamp = ref<number>(0);
+const currentSymbol = ref<string>();
+const currentDate = ref<string>();
 
-function createChart(ds: HTMLElement | string) {
-  const chart = init(ds, {
-    styles: {
-      grid: {
-        show: false
-      },
-      candle: {
-        bar: {
-          upColor: '#F92855',
-          upBorderColor: '#F92855',
-          upWickColor: '#F92855',
-          downColor: '#2DC08E',
-          downBorderColor: '#2DC08E',
-          downWickColor: '#2DC08E',
-          noChangeColor: '#888888',
-          noChangeBorderColor: '#888888',
-          noChangeWickColor: '#888888'
-        },
-        tooltip: {
-          custom: [
-            { title: '开：', value: '{open}' },
-            { title: '高：', value: '{high}' },
-            { title: '低：', value: '{low}' },
-            { title: '收：', value: '{close}' },
-            { title: '量：', value: '{volume}' }
-          ]
-        }
-      },
-    }
-  })!;
-  return chart;
+// 通过时间查询本地缓存中的标记
+const findSymbol = (timestamp: number) => {
+  return indexData.value.find(v => v.timestamp == timestamp)?.symbol;
 }
 
-async function onCrosshairChange(data: any) {
-  const date = dayjs(data.timestamp).format('YYYYMMDD');
+// 移除输入框的焦点
+const handleEnter = (event: KeyboardEvent) => {
+  // @ts-ignore
+  event.target!.blur();
+};
 
-  const elements = await fetchNoteContent(date);
+// 更新标记
+const handleUpdateSymbol = async (payload: FocusEvent) => {
+  // @ts-ignore
+  const updateSymbol = payload.target.value;
+
+  if (updateSymbol != findSymbol(currentTimestamp.value)) {
+    await updateIndex(
+      dayjs(currentTimestamp.value).format('YYYYMMDD'), 
+      updateSymbol,
+    );
+    // 刷新列表
+    indexData.value = await fetchIndex();
+    randerOverlays(klineChart.value!, indexData.value);
+  }
+}
+
+// 监控 十字准线改变时, 获取当天的笔记数据
+const onCrosshairChange = async (data: any) => {
+  currentTimestamp.value = data.timestamp;
+  currentDate.value =  dayjs(data.timestamp).format('YYYY-MM-DD')
+
+  // 1更新笔记
+  const elements = await fetchNoteContent(
+    dayjs(data.timestamp).format('YYYYMMDD')
+  );
   if (!Array.isArray(elements)) {
     return
   }
-
   const container = document.createElement('div');
   for (const el of elements) {
     container.appendChild(el);
   }
   // 将新元素插入到容器中
   noteContent.value!.replaceChildren(container);
+
+  // 2更新标记
+  currentSymbol.value = findSymbol(currentTimestamp.value);
 }
 
 onMounted(async () => {
-  const chart = createChart("chart");
-
-  // 获取K线数据创建K线图
   const klinesData = await fetchKlineData();
-  chart.applyNewData(klinesData);
+  indexData.value = await fetchIndex();
+  klineChart.value = await createChart("chart", klinesData);
 
-  // 为K线图增加指标
-  chart.createIndicator("MYMA", false, {
-    id: 'candle_pane'
-  });
-  chart.createIndicator("MYVOL", false, {
-    height: 50,
-  });
+  randerOverlays(klineChart.value!, indexData.value);
 
-  // 获取笔记列表 创建K线图中的提示标签
-  const indexItems = await fetchIndex();
-  for (const item of indexItems) {
-    const kline = klinesData.find(
-      (k) => k.timestamp == item.timestamp
-    );
-    if (!kline) {
-      continue;
-    }
-    chart.createOverlay({
-      name: 'annotation',
-      extendData: item.symbol,
-      styles: {
-        text: { size: 10 },
-      },
-      points: [{ 
-        timestamp: kline.timestamp, 
-        value: kline.high,
-      }]
-    });
-  }
-
-  // 监控 十字准线改变时
-  chart.subscribeAction(
-    ActionType.OnCrosshairChange, 
+  klineChart.value.subscribeAction(
+    ActionType.OnCrosshairChange,
     debounce(onCrosshairChange, 300, false),
   );
 });
@@ -111,6 +99,7 @@ onMounted(async () => {
 onUnmounted(() => {
   dispose('chart')
 })
+
 </script>
 
 <style>
@@ -131,7 +120,7 @@ onUnmounted(() => {
 
 html, body, #app {
   margin: 0;
-  width:100%;
+  width: 100%;
   height: 100%;
 }
 
@@ -144,11 +133,36 @@ html, body, #app {
 }
 
 #slide {
-  padding: 8px;
-  margin: 8px;
+  padding: 3px;
+  margin: 3px;
   border-right: 1px dotted #f6f6f6;
   font-size: 10px;
   width: 200px;
+  overflow: scroll;
+}
+
+.slide-header {
+  border-bottom: 1px dotted #7c7c7c;
+  padding-bottom: 2px;
+}
+
+.current-date {
+  color: rgb(196, 196, 196);
+  text-align: center;
+}
+
+#noteContent{
+  padding: 5px;
+}
+
+#symbol-input {
+  background-color: #161618;
+  color: rgb(243, 106, 42);
+  box-sizing: border-box;
+  text-align: center;
+  border: none;
+  padding: 5px;
+  width: 100%;
 }
 
 #chart {
@@ -162,6 +176,28 @@ html, body, #app {
     color: #f6f6f6;
     background-color: #161618;
   }
+}
+
+ /* 滚动条样式 */
+ div::-webkit-scrollbar {
+  width: 2px;
+  height: 1px;
+}
+
+div::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  box-shadow: inset 0 0 5px rgba(182, 176, 176, 0.2);
+  background: #d1d1d1;
+}
+
+div::-webkit-scrollbar-track {
+  box-shadow: none;
+  border-radius: 4px;
+  background: transparent;
+}
+
+textarea::-webkit-scrollbar {
+  display: none;
 }
 
 </style>

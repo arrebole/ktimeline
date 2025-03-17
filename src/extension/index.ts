@@ -1,2 +1,0 @@
-import "./indicator";
-import "./overlay";
