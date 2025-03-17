@@ -6,8 +6,8 @@ function convertToTimestamp(dateStr: string) {
     const year = dateStr.slice(0, 4);
     const month = dateStr.slice(4, 6);
     const day = dateStr.slice(6, 8);
-    // 使用 UTC 时间
-    const date = new Date(+year, +month - 1, +day);
+    // 使用东八区时间
+    const date = new Date(`${year}-${month}-${day}T00:00:00+08:00`);
     // 获取时间戳
     return date.getTime();
 }
@@ -41,8 +41,7 @@ export async function fetchIndex() {
         .map(v => v.split(" "))
         .map(rows => ({
             timestamp: convertToTimestamp(rows[0]),
-            up: rows[1],
-            down: rows[2],
+            symbol: rows[1],
         }));
 }
 
@@ -51,6 +50,9 @@ export async function fetchIndex() {
  */
 const noteCache = new Map<string, HTMLElement[] | null>();
 
+/**
+ * 将字符串转化为字节码
+ */
 function stringToArrayBuffer(str: string) {
     const buffer = new ArrayBuffer(str.length);
     const bufferView = new Uint8Array(buffer);

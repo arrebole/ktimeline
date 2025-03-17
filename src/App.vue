@@ -6,7 +6,8 @@
 </template>
 
 <script setup lang="ts">
-import './indicator';
+import './extension';
+import dayjs from 'dayjs'
 import { ref, onMounted, onUnmounted } from "vue";
 import { init, dispose, ActionType } from 'klinecharts';
 import { fetchKlineData, fetchIndex, fetchNoteContent } from './api';
@@ -33,7 +34,6 @@ function createChart(ds: HTMLElement | string) {
         },
         tooltip: {
           custom: [
-            { title: '时：', value: '{time}' },
             { title: '开：', value: '{open}' },
             { title: '高：', value: '{high}' },
             { title: '低：', value: '{low}' },
@@ -71,32 +71,22 @@ onMounted(async () => {
     if (!kline) {
       continue;
     }
-    const extendData = [];
-    if (item.up) {
-      extendData.push(item.up + "↑");
-    }
-    if (item.down) {
-      extendData.push(item.down + "↓")
-    }
     chart.createOverlay({
-      name: 'simpleAnnotation',
-      extendData: extendData.join(""),
+      name: 'annotation',
+      extendData: item.symbol,
       styles: {
-        text: { size: 9 }
+        text: { size: 10 },
       },
       points: [{ 
         timestamp: kline.timestamp, 
-        value: Math.max(kline.open, kline.close), 
+        value: kline.high,
       }]
     });
   }
 
   // 监控 十字准线改变时
   chart.subscribeAction(ActionType.OnCrosshairChange, async (data: any) => {
-    const date = new Date(data.timestamp)
-      .toISOString()
-      .substring(0, 10)
-      .replace(/-/g, "");
+    const date = dayjs(data.timestamp).format('YYYYMMDD');
 
     const elements = await fetchNoteContent(date);
     if (!Array.isArray(elements)) {

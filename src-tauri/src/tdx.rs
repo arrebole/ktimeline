@@ -49,8 +49,7 @@ pub fn read_lday(code: &str) -> String {
 #[derive(Debug, Deserialize)]
 struct IndexItem {
     date: String,
-    up: String,
-    down: String
+    symbol: String,
 }
 
 // 读取索引，获取日期事件标记
@@ -72,7 +71,7 @@ pub fn read_index() -> String {
     let mut result = String::new();
     let items: Vec<IndexItem> = serde_yaml::from_str(&contents).unwrap();
     for v in items {
-        result += &format!("{} {} {}\n", v.date, v.up, v.down);
+        result += &format!("{} {}\n", v.date, v.symbol);
     }
     return result;
 }
