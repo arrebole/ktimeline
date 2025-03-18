@@ -104,13 +104,7 @@ onUnmounted(() => {
 
 <style>
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
+  font-family: 'Microsoft YaHei', 'SimHei', 'YouYuan';
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -126,7 +120,6 @@ html, body, #app {
 
 .main {
   display: flex;
-  /* 垂直排列 */
   flex-direction: row;
   height: 100vh;
   width: 100vw;
@@ -135,9 +128,8 @@ html, body, #app {
 #slide {
   padding: 3px;
   margin: 3px;
-  border-right: 1px dotted #f6f6f6;
-  font-size: 10px;
   width: 200px;
+  border-right: 1px dotted #f6f6f6;
   overflow: scroll;
 }
 
@@ -147,15 +139,13 @@ html, body, #app {
 }
 
 .current-date {
+  font-size: 0.5rem;
   color: rgb(196, 196, 196);
   text-align: center;
 }
 
-#noteContent{
-  padding: 5px;
-}
-
 #symbol-input {
+  font-size: 1rem;
   background-color: #161618;
   color: rgb(243, 106, 42);
   box-sizing: border-box;
@@ -163,6 +153,11 @@ html, body, #app {
   border: none;
   padding: 5px;
   width: 100%;
+}
+
+#noteContent{
+  padding: 5px;
+  font-size: 0.7rem;
 }
 
 #chart {
