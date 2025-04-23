@@ -1,7 +1,7 @@
 {
   "name": "ktimeline",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,6 @@
   "dependencies": {
     "dayjs": "^1.11.13",
     "klinecharts": "^10.0.0-alpha5",
-    "rtf.js": "^3.0.9",
     "vue": "^3.5.13",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2"

@@ -63,7 +63,7 @@ export function randerOverlays(chart: Chart, indexItems: any[]) {
     }
     chart.createOverlay({
       name: 'annotation',
-      extendData: item.symbol,
+      extendData: item.block,
       styles: {
         text: { size: 10 },
       },

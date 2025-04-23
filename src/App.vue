@@ -3,16 +3,54 @@
     <div id="slide">
       <div class="slide-header">
         <div class="current-date">{{ currentDate }}</div>
-        <input 
-          id="symbol-input" 
-          v-model="currentSymbol"
-          placeholder="..."
-          autocomplete="off"
-          @blur="handleUpdateSymbol"
-          @keyup.enter="handleEnter"
-        />
+        <div class="current-block"> {{ currentBlock }} </div>
       </div>
-      <div id="noteContent" ref="noteContent"></div>
+      <div class="contents" v-if="currentCoreDriver && currentCoreDriver.length > 0">
+        <div v-for="item in currentCoreDriver">
+          <p>
+            <div>【择时环境】</div>
+            <div class="contents-text">{{ item.environment }}</div>
+          </p>
+
+          <p>
+            <div>【核心板块】</div>
+            <div class="contents-text">{{ item.block }}</div>
+          </p>
+
+          <p>
+            <div>【事件驱动】</div>
+            <div class="contents-text">{{ item.event }}</div>
+          </p>
+
+          <p>
+            <div>【老龙】</div>
+            <div class="contents-text">
+              <span class="span-item" v-for="i in item.oldDragon">{{ i }}</span>
+            </div>
+          </p>
+
+          <p>
+            <div>【资金一致性】</div>
+            <div class="contents-text">
+              <span class="span-item" v-for="i in item.active">{{ i }}</span>
+            </div>
+          </p>
+
+          <p>
+            <div>【构造买点】</div>
+            <div class="contents-text">
+              <span class="span-item" v-for="i in item.ready">{{ i }}</span>
+            </div>
+          </p>
+
+          <p>
+            <div>【本轮新龙】</div>
+            <div class="contents-text">
+              <span class="span-item" v-for="i in item.newDragon">{{ i }}</span>
+            </div>
+          </p>
+        </div>
+      </div>
     </div>
     <div id="chart"/>
   </main>
@@ -24,71 +62,37 @@ import { createChart, randerOverlays } from './klineChart';
 import { ref, onMounted, onUnmounted } from "vue";
 import { dispose, Chart, ActionType } from 'klinecharts';
 import { debounce } from './utils';
-import { fetchIndex, fetchKlineData, fetchNoteContent, IndexItem, updateIndex } from './api';
+import { fetchKlineData, fetchTimelines, CoreDriver } from './api';
 
 const klineChart = ref<Chart>();
-const noteContent = ref<HTMLElement>();
-const indexData = ref<IndexItem[]>([]);
+const timelineData = ref<CoreDriver[]>([]);
+
 const currentTimestamp = ref<number>(0);
-const currentSymbol = ref<string>();
 const currentDate = ref<string>();
-
-// 通过时间查询本地缓存中的标记
-const findSymbol = (timestamp: number) => {
-  return indexData.value.find(v => v.timestamp == timestamp)?.symbol;
-}
-
-// 移除输入框的焦点
-const handleEnter = (event: KeyboardEvent) => {
-  // @ts-ignore
-  event.target!.blur();
-};
-
-// 更新标记
-const handleUpdateSymbol = async (payload: FocusEvent) => {
-  // @ts-ignore
-  const updateSymbol = payload.target.value;
-
-  if (updateSymbol != findSymbol(currentTimestamp.value)) {
-    await updateIndex(
-      dayjs(currentTimestamp.value).format('YYYYMMDD'), 
-      updateSymbol,
-    );
-    // 刷新列表
-    indexData.value = await fetchIndex();
-    randerOverlays(klineChart.value!, indexData.value);
-  }
-}
+const currentBlock = ref<string>();
+const currentCoreDriver = ref<CoreDriver[]>();
 
 // 监控 十字准线改变时, 获取当天的笔记数据
 const onCrosshairChange = async (data: any) => {
   currentTimestamp.value = data.timestamp;
   currentDate.value =  dayjs(data.timestamp).format('YYYY-MM-DD')
 
-  // 1更新笔记
-  const elements = await fetchNoteContent(
-    dayjs(data.timestamp).format('YYYYMMDD')
-  );
-  if (!Array.isArray(elements)) {
-    return
+  let coreDriver = [];
+  for (const item of timelineData.value) {
+    if (item.timestamp == data.timestamp) {
+      coreDriver.push(item)
+    }
   }
-  const container = document.createElement('div');
-  for (const el of elements) {
-    container.appendChild(el);
-  }
-  // 将新元素插入到容器中
-  noteContent.value!.replaceChildren(container);
-
-  // 2更新标记
-  currentSymbol.value = findSymbol(currentTimestamp.value);
+  currentBlock.value = coreDriver.map(v=>v.block).join("/");
+  currentCoreDriver.value = coreDriver;
 }
 
 onMounted(async () => {
   const klinesData = await fetchKlineData();
-  indexData.value = await fetchIndex();
+  timelineData.value = await fetchTimelines();
   klineChart.value = await createChart("chart", klinesData);
 
-  randerOverlays(klineChart.value!, indexData.value);
+  randerOverlays(klineChart.value!, timelineData.value);
 
   klineChart.value.subscribeAction(
     ActionType.OnCrosshairChange,
@@ -144,7 +148,7 @@ html, body, #app {
   text-align: center;
 }
 
-#symbol-input {
+.current-block {
   font-size: 1rem;
   background-color: #161618;
   color: rgb(243, 106, 42);
@@ -155,9 +159,22 @@ html, body, #app {
   width: 100%;
 }
 
-#noteContent{
+.contents{
   padding: 5px;
   font-size: 0.7rem;
+  border-bottom: 1px solid #7c7c7c;
+}
+
+.contents-text{
+  text-indent: 0.3rem;
+}
+
+.span-item {
+  color: #e2a626;
+  margin: 1px;
+  padding: 1px;
+  border-radius: 8%;
+  border: 1px solid #7c7c7c;
 }
 
 #chart {
