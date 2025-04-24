@@ -7,10 +7,10 @@ export interface CoreDriver {
     environment: string;
     block: string;
     event: string;
-    oldDragon: string[];
+    leader: string[];
     active: string[];
     ready: string[];
-    newDragon: string[];
+    starts: string[];
 }
 
 function convertToTimestamp(dateStr: string) {
@@ -60,9 +60,9 @@ export async function fetchTimelines(): Promise<CoreDriver[]> {
             environment: rows[1],
             block: rows[2],
             event: rows[3],
-            oldDragon: rows[4].split("、"),
+            leader: rows[4].split("、"),
             active: rows[5].split("、"),
             ready: rows[6].split("、"),
-            newDragon: rows[7].split("、"),
+            starts: rows[7].split("、"),
         }));
 }

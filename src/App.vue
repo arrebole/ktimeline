@@ -23,9 +23,9 @@
           </p>
 
           <p>
-            <div>【老龙】</div>
+            <div>【资金龙】</div>
             <div class="contents-text">
-              <span class="span-item" v-for="i in item.oldDragon">{{ i }}</span>
+              <span class="span-item" v-for="i in item.leader">{{ i }}</span>
             </div>
           </p>
 
@@ -44,9 +44,9 @@
           </p>
 
           <p>
-            <div>【本轮新龙】</div>
+            <div>【本轮龙头】</div>
             <div class="contents-text">
-              <span class="span-item" v-for="i in item.newDragon">{{ i }}</span>
+              <span class="span-item" v-for="i in item.starts">{{ i }}</span>
             </div>
           </p>
         </div>
